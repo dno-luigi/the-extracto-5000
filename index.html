@@ -3,26 +3,482 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EZ Visual Code Editor</title>
-    <!-- GitHub Pages-friendly CSP -->
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self' https:;
-        script-src 'self' 'unsafe-inline' https:;
-        style-src 'self' 'unsafe-inline' https:;
-        img-src 'self' data: https:;
-        font-src 'self' https:;
-        connect-src 'self' https:;
-        frame-src 'self' blob:;
-        object-src 'none';
-    ">
-    <!-- Correct relative path for GitHub Pages -->
-    <link rel="stylesheet" href="./ez_visual_editor_styles.css">
+    <title>ai-nEDit</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #334155;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background: #f1f5f9;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 600;
+            color: #475569;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-content {
+            padding: 1.5rem;
+        }
+
+        .code-input {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            background: #fafafa;
+            transition: border-color 0.3s;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .preview-frame {
+            width: 100%;
+            height: 400px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+        }
+
+        /* Full-screen editor styles */
+        .fullscreen-editor {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1000;
+            background: #1e293b;
+            display: none;
+        }
+
+        .fullscreen-editor.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .fullscreen-header {
+            background: #0f172a;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+        }
+
+        .fullscreen-content {
+            flex: 1;
+            display: flex;
+        }
+
+        .fullscreen-code-editor {
+            flex: 1;
+            background: #1e293b;
+            color: #e2e8f0;
+            border: none;
+            padding: 2rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+        }
+
+        .fullscreen-preview {
+            flex: 1;
+            border-left: 1px solid #334155;
+        }
+
+        .fullscreen-preview iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        /* Analysis System Editor */
+        .analysis-editor {
+            grid-column: 1 / -1;
+            margin-top: 2rem;
+        }
+
+        .analysis-rule {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .analysis-rule.editing {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .rule-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .rule-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .rule-field {
+            margin-bottom: 0.75rem;
+        }
+
+        .rule-field label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.25rem;
+        }
+
+        .rule-field input,
+        .rule-field textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .rule-field textarea {
+            min-height: 60px;
+            resize: vertical;
+        }
+
+        /* Snippet Library Styles */
+        .snippet-library {
+            grid-column: 1 / -1;
+            margin-top: 2rem;
+        }
+
+        .snippet-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .snippet-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            transition: all 0.2s;
+        }
+
+        .snippet-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .snippet-card h4 {
+            color: #1e293b;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .snippet-card p {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .snippet-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .snippet-code {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 0.5rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            max-height: 120px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            white-space: pre-wrap;
+        }
+
+        .refactor-options {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .refactor-options h5 {
+            margin-bottom: 0.5rem;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .refactor-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .refactor-option input[type="checkbox"] {
+            margin: 0;
+        }
+
+        .refactor-option label {
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+
+        .analysis-panel {
+            grid-column: 1 / -1;
+            margin-top: 2rem;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .analysis-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            position: relative;
+        }
+
+        .analysis-card h3 {
+            color: #1e293b;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fcd34d;
+        }
+
+        .tab-indicator, .effect-indicator, .interactive-indicator {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            color: white;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .tab-indicator {
+            background: #10b981;
+        }
+
+        .effect-indicator {
+            background: #f59e0b;
+        }
+
+        .interactive-indicator {
+            background: #8b5cf6;
+        }
+
+        @media (max-width: 768px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+
+            .fullscreen-content {
+                flex-direction: column;
+            }
+
+            .fullscreen-preview {
+                border-left: none;
+                border-top: 1px solid #334155;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>🎨 EZ Visual Code Editor</h1>
-            <p>No-code visual editing with direct manipulation</p>
+            <h1>🛠️ ai-nEDit: </h1>
+            <p>Edit, analyze, and manage code snippets</p>
         </header>
 
         <div class="main-layout">
@@ -36,8 +492,8 @@
                         <button class="btn btn-primary" onclick="analyzeCode()">
                             🔍 Analyze & Preview
                         </button>
-                        <button class="btn btn-warning" onclick="openVisualEditor()">
-                            🎨 Visual Edit
+                        <button class="btn btn-warning" onclick="openFullscreenEditor()">
+                            🖥️ Full Screen Edit
                         </button>
                         <button class="btn btn-secondary" onclick="clearCode()">
                             🗑️ Clear
@@ -69,50 +525,912 @@
                     </div>
                 </div>
                 <div class="panel-content">
-                    <!-- GitHub-friendly iframe sandbox -->
-                    <iframe 
-                        id="previewFrame" 
-                        class="preview-frame" 
-                        sandbox="allow-same-origin allow-scripts allow-modals"
-                    ></iframe>
+                    <iframe id="previewFrame" class="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis System Editor -->
+        <div class="panel analysis-editor" id="analysisEditor" style="display: none;">
+            <div class="panel-header">
+                ⚙️ Analysis System Editor
+                <div>
+                    <button class="btn btn-primary" onclick="addAnalysisRule()">
+                        ➕ Add Rule
+                    </button>
+                    <button class="btn btn-success" onclick="saveAnalysisSystem()">
+                        💾 Save System
+                    </button>
+                    <button class="btn btn-secondary" onclick="resetAnalysisSystem()">
+                        🔄 Reset to Default
+                    </button>
+                </div>
+            </div>
+            <div class="panel-content">
+                <p style="margin-bottom: 1rem; color: #64748b;">
+                    Customize how the system detects and analyzes visual effects, patterns, and features in HTML/CSS code.
+                </p>
+                <div id="analysisRules">
+                    <!-- Analysis rules will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Panel -->
+        <div class="panel analysis-panel" id="analysisPanel" style="display: none;">
+            <div class="panel-header">
+                📊 Code Analysis
+                <button class="btn btn-secondary" onclick="toggleAnalysisEditor()">
+                    ⚙️ Edit Analysis System
+                </button>
+            </div>
+            <div class="panel-content">
+                <div id="statusMessage"></div>
+                <div class="analysis-grid" id="analysisGrid">
+                    <!-- Analysis cards will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Snippet Library Panel -->
+        <div class="panel snippet-library" id="snippetLibrary" style="display: none;">
+            <div class="panel-header">
+                📚 Snippet Library
+                <button class="btn btn-secondary" onclick="clearSnippetLibrary()">
+                    🗑️ Clear Library
+                </button>
+            </div>
+            <div class="panel-content">
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="extractAndSaveSnippets()">
+                        ✂️ Extract & Save Snippets
+                    </button>
+                    <button class="btn btn-success" onclick="exportSnippetLibrary()">
+                        📤 Export Library
+                    </button>
+                    <input type="file" id="snippetImportInput" accept=".json" style="display: none;" onchange="importSnippetLibrary(event)">
+                    <button class="btn btn-secondary" onclick="document.getElementById('snippetImportInput').click()">
+                        📥 Import Library
+                    </button>
+                </div>
+                <div class="snippet-grid" id="snippetGrid">
+                    <!-- Snippet cards will be populated here -->
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Visual Editor -->
-    <div class="visual-editor" id="visualEditor">
-        <div class="visual-editor-header">
-            <h2>🎨 Visual Editor - Click elements to edit</h2>
+    <!-- Full-screen Editor -->
+    <div class="fullscreen-editor" id="fullscreenEditor">
+        <div class="fullscreen-header">
+            <h2>🖥️ Full Screen Code Editor</h2>
             <div>
-                <button class="btn btn-success" onclick="saveFromVisualEditor()">
-                    💾 Save Changes
+                <button class="btn btn-success" onclick="saveFromFullscreen()">
+                    💾 Save & Apply
                 </button>
-                <button class="btn btn-secondary" onclick="closeVisualEditor()">
-                    ❌ Exit Visual Mode
+                <button class="btn btn-secondary" onclick="closeFullscreenEditor()">
+                    ❌ Close
                 </button>
             </div>
         </div>
-        <div class="visual-editor-content">
-            <iframe 
-                id="visualEditorFrame" 
-                class="visual-editor-frame" 
-                sandbox="allow-same-origin allow-scripts allow-modals"
-            ></iframe>
+        <div class="fullscreen-content">
+            <textarea id="fullscreenCodeEditor" class="fullscreen-code-editor" placeholder="Edit your HTML code here..."></textarea>
+            <div class="fullscreen-preview">
+                <iframe id="fullscreenPreviewFrame" sandbox="allow-scripts allow-same-origin"></iframe>
+            </div>
         </div>
     </div>
 
-    <!-- Property Panel -->
-    <div class="property-panel" id="propertyPanel">
-        <div class="property-panel-header">
-            <span id="selectedElementType">Element Properties</span>
-        </div>
-        <div class="property-panel-content" id="propertyPanelContent">
-            <!-- Properties will be populated here -->
-        </div>
-    </div>
+    <script>
+        let currentHTML = '';
+        let snippetLibrary = [];
+        let analysisData = {};
+        let analysisRules = [];
 
-    <!-- Correct relative path for GitHub Pages -->
-    <script src="./ez_visual_editor_app.js"></script>
+        // Default analysis rules
+        const defaultAnalysisRules = [
+            {
+                id: 'glitch-effect',
+                name: 'Glitch Effect',
+                description: 'Detects CSS glitch effects using keyframes and clip-path',
+                patterns: ['glitch', '@keyframes.*clip-path', 'text-shadow.*#ff00c1', 'text-shadow.*#00fff9'],
+                cssSelectors: ['.glitch', '[class*="glitch"]'],
+                extractionRules: {
+                    css: ['@keyframes glitch[^}]*{[^}]*}', '\\.glitch[^}]*{[^}]*}'],
+                    html: ['<[^>]*class[^>]*glitch[^>]*>[^<]*</[^>]*>']
+                },
+                refactorRules: {
+                    classNames: ['glitch-text', 'text-glitch', 'animated-glitch'],
+                    variableNames: ['--glitch-color-1', '--glitch-color-2', '--glitch-offset']
+                }
+            },
+            {
+                id: 'ink-bleed',
+                name: 'Ink Bleed Effect',
+                description: 'Detects ink bleeding hover effects using blur and contrast',
+                patterns: ['bleeding', 'blur.*contrast', 'filter.*blur.*contrast'],
+                cssSelectors: ['.bleeding', '[class*="bleed"]'],
+                extractionRules: {
+                    css: ['\\.bleeding[^}]*{[^}]*}', '\\.bleeding[^}]*:hover[^}]*{[^}]*}'],
+                    html: ['<[^>]*class[^>]*bleed[^>]*>[^<]*</[^>]*>']
+                },
+                refactorRules: {
+                    classNames: ['ink-bleed', 'bleed-effect', 'bleeding-text'],
+                    variableNames: ['--bleed-blur', '--bleed-contrast', '--bleed-color']
+                }
+            },
+            {
+                id: 'tab-system',
+                name: 'CSS Tab System',
+                description: 'Detects CSS-only tab navigation systems',
+                patterns: [':target', '\\.tabs', '\\.content-pane', 'nav.*tab'],
+                cssSelectors: ['.tabs', '.content-pane', '[class*="tab"]'],
+                extractionRules: {
+                    css: ['\\.tabs[^}]*{[^}]*}', '\\.content-pane[^}]*{[^}]*}', ':target[^}]*{[^}]*}'],
+                    html: ['<nav[^>]*class[^>]*tabs[^>]*>.*?</nav>', '<[^>]*class[^>]*content-pane[^>]*>.*?</[^>]*>']
+                },
+                refactorRules: {
+                    classNames: ['tab-nav', 'tab-content', 'tab-pane', 'navigation-tabs'],
+                    variableNames: ['--tab-active-color', '--tab-border-color', '--tab-padding']
+                }
+            },
+            {
+                id: 'star-map',
+                name: 'Interactive Star Map',
+                description: 'Detects interactive star map with hover effects',
+                patterns: ['star.*hover', 'radial-gradient.*star', 'box-shadow.*star', 'star-system'],
+                cssSelectors: ['.star', '.star-system', '[class*="star"]'],
+                extractionRules: {
+                    css: ['\\.star[^}]*{[^}]*}', '\\.star-system[^}]*{[^}]*}', '\\.star[^}]*:hover[^}]*{[^}]*}'],
+                    html: ['<[^>]*class[^>]*star[^>]*>.*?</[^>]*>']
+                },
+                refactorRules: {
+                    classNames: ['star-point', 'constellation', 'interactive-star', 'star-node'],
+                    variableNames: ['--star-glow', '--star-size', '--star-color']
+                }
+            }
+        ];
+
+        // Initialize from localStorage
+        function initializeApp() {
+            const savedSnippets = localStorage.getItem('ezCodeSnippets');
+            if (savedSnippets) {
+                snippetLibrary = JSON.parse(savedSnippets);
+                displaySnippetLibrary();
+            }
+
+            const savedRules = localStorage.getItem('ezAnalysisRules');
+            if (savedRules) {
+                analysisRules = JSON.parse(savedRules);
+            } else {
+                analysisRules = [...defaultAnalysisRules];
+                saveAnalysisRulesToStorage();
+            }
+            displayAnalysisRules();
+        }
+
+        // Analysis System Editor Functions
+        function toggleAnalysisEditor() {
+            const editor = document.getElementById('analysisEditor');
+            editor.style.display = editor.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function displayAnalysisRules() {
+            const container = document.getElementById('analysisRules');
+            container.innerHTML = analysisRules.map(rule => `
+                <div class="analysis-rule" id="rule-${rule.id}">
+                    <div class="rule-header">
+                        <span class="rule-name">${rule.name}</span>
+                        <div class="rule-controls">
+                            <button class="btn btn-secondary" onclick="editRule('${rule.id}')">Edit</button>
+                            <button class="btn btn-danger" onclick="deleteRule('${rule.id}')">Delete</button>
+                        </div>
+                    </div>
+                    <div class="rule-content">
+                        <p><strong>Description:</strong> ${rule.description}</p>
+                        <p><strong>Patterns:</strong> ${rule.patterns.join(', ')}</p>
+                        <p><strong>CSS Selectors:</strong> ${rule.cssSelectors.join(', ')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addAnalysisRule() {
+            const newRule = {
+                id: 'custom-' + Date.now(),
+                name: 'New Custom Rule',
+                description: 'Describe what this rule detects',
+                patterns: ['pattern1', 'pattern2'],
+                cssSelectors: ['.custom-class'],
+                extractionRules: {
+                    css: ['\\.custom-class[^}]*{[^}]*}'],
+                    html: ['<[^>]*class[^>]*custom[^>]*>[^<]*</[^>]*>']
+                },
+                refactorRules: {
+                    classNames: ['custom-effect', 'effect-custom'],
+                    variableNames: ['--custom-var']
+                }
+            };
+            
+            analysisRules.push(newRule);
+            displayAnalysisRules();
+            editRule(newRule.id);
+            showStatus('New analysis rule added. Please configure it.', 'info');
+        }
+
+        function editRule(ruleId) {
+            const rule = analysisRules.find(r => r.id === ruleId);
+            if (!rule) return;
+
+            const ruleElement = document.getElementById(`rule-${ruleId}`);
+            ruleElement.classList.add('editing');
+            
+            ruleElement.querySelector('.rule-content').innerHTML = `
+                <div class="rule-field">
+                    <label>Rule Name:</label>
+                    <input type="text" id="edit-name-${ruleId}" value="${rule.name}">
+                </div>
+                <div class="rule-field">
+                    <label>Description:</label>
+                    <textarea id="edit-desc-${ruleId}">${rule.description}</textarea>
+                </div>
+                <div class="rule-field">
+                    <label>Detection Patterns (comma-separated):</label>
+                    <textarea id="edit-patterns-${ruleId}">${rule.patterns.join(', ')}</textarea>
+                </div>
+                <div class="rule-field">
+                    <label>CSS Selectors (comma-separated):</label>
+                    <input type="text" id="edit-selectors-${ruleId}" value="${rule.cssSelectors.join(', ')}">
+                </div>
+                <div class="rule-field">
+                    <label>CSS Extraction Patterns (comma-separated):</label>
+                    <textarea id="edit-css-extract-${ruleId}">${rule.extractionRules.css.join(', ')}</textarea>
+                </div>
+                <div class="rule-field">
+                    <label>HTML Extraction Patterns (comma-separated):</label>
+                    <textarea id="edit-html-extract-${ruleId}">${rule.extractionRules.html.join(', ')}</textarea>
+                </div>
+                <div class="rule-field">
+                    <label>Refactor Class Names (comma-separated):</label>
+                    <input type="text" id="edit-class-names-${ruleId}" value="${rule.refactorRules.classNames.join(', ')}">
+                </div>
+                <div class="rule-field">
+                    <label>Refactor Variable Names (comma-separated):</label>
+                    <input type="text" id="edit-var-names-${ruleId}" value="${rule.refactorRules.variableNames.join(', ')}">
+                </div>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-success" onclick="saveRule('${ruleId}')">Save</button>
+                    <button class="btn btn-secondary" onclick="cancelEditRule('${ruleId}')">Cancel</button>
+                </div>
+            `;
+        }
+
+        function saveRule(ruleId) {
+            const rule = analysisRules.find(r => r.id === ruleId);
+            if (!rule) return;
+
+            rule.name = document.getElementById(`edit-name-${ruleId}`).value;
+            rule.description = document.getElementById(`edit-desc-${ruleId}`).value;
+            rule.patterns = document.getElementById(`edit-patterns-${ruleId}`).value.split(',').map(p => p.trim());
+            rule.cssSelectors = document.getElementById(`edit-selectors-${ruleId}`).value.split(',').map(s => s.trim());
+            rule.extractionRules.css = document.getElementById(`edit-css-extract-${ruleId}`).value.split(',').map(e => e.trim());
+            rule.extractionRules.html = document.getElementById(`edit-html-extract-${ruleId}`).value.split(',').map(e => e.trim());
+            rule.refactorRules.classNames = document.getElementById(`edit-class-names-${ruleId}`).value.split(',').map(c => c.trim());
+            rule.refactorRules.variableNames = document.getElementById(`edit-var-names-${ruleId}`).value.split(',').map(v => v.trim());
+
+            saveAnalysisRulesToStorage();
+            displayAnalysisRules();
+            showStatus('Analysis rule saved successfully!', 'success');
+        }
+
+        function cancelEditRule(ruleId) {
+            displayAnalysisRules();
+        }
+
+        function deleteRule(ruleId) {
+            if (confirm('Are you sure you want to delete this analysis rule?')) {
+                analysisRules = analysisRules.filter(r => r.id !== ruleId);
+                saveAnalysisRulesToStorage();
+                displayAnalysisRules();
+                showStatus('Analysis rule deleted.', 'info');
+            }
+        }
+
+        function saveAnalysisSystem() {
+            saveAnalysisRulesToStorage();
+            showStatus('Analysis system saved successfully!', 'success');
+        }
+
+        function resetAnalysisSystem() {
+            if (confirm('Reset analysis system to default rules? This will remove all custom rules.')) {
+                analysisRules = [...defaultAnalysisRules];
+                saveAnalysisRulesToStorage();
+                displayAnalysisRules();
+                showStatus('Analysis system reset to default.', 'info');
+            }
+        }
+
+        function saveAnalysisRulesToStorage() {
+            localStorage.setItem('ezAnalysisRules', JSON.stringify(analysisRules));
+        }
+
+        // Load file functionality
+        function loadFile(event) {
+            const file = event.target.files[0];
+            if (file && file.type === 'text/html') {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('codeInput').value = e.target.result;
+                    showStatus('File loaded successfully!', 'success');
+                };
+                reader.readAsText(file);
+            } else {
+                showStatus('Please select a valid HTML file.', 'warning');
+            }
+        }
+
+        // Clear code functionality
+        function clearCode() {
+            document.getElementById('codeInput').value = '';
+            document.getElementById('previewFrame').src = 'about:blank';
+            document.getElementById('analysisPanel').style.display = 'none';
+            document.getElementById('snippetLibrary').style.display = 'none';
+            hideIndicators();
+            showStatus('Code cleared.', 'info');
+        }
+
+        // Hide all indicators
+        function hideIndicators() {
+            document.getElementById('tabIndicator').style.display = 'none';
+            document.getElementById('effectIndicator').style.display = 'none';
+            document.getElementById('interactiveIndicator').style.display = 'none';
+            document.getElementById('saveCodeBtn').style.display = 'none';
+        }
+
+        // Analyze code and generate preview
+        function analyzeCode() {
+            const code = document.getElementById('codeInput').value.trim();
+            if (!code) {
+                showStatus('Please enter some HTML code first.', 'warning');
+                return;
+            }
+
+            currentHTML = code;
+            
+            // Generate preview
+            const previewFrame = document.getElementById('previewFrame');
+            const blob = new Blob([code], { type: 'text/html' });
+            previewFrame.src = URL.createObjectURL(blob);
+
+            // Analyze the code
+            performAnalysis(code);
+
+            // Show panels and save button
+            document.getElementById('snippetLibrary').style.display = 'block';
+            document.getElementById('saveCodeBtn').style.display = 'inline-block';
+
+            showStatus('Code analyzed successfully! You can now extract snippets and edit in full-screen.', 'success');
+        }
+
+        // Enhanced analysis function using custom rules
+        function performAnalysis(code) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(code, 'text/html');
+            
+            // Basic metrics
+            const elements = doc.querySelectorAll('*');
+            const headings = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+            const links = doc.querySelectorAll('a');
+            const images = doc.querySelectorAll('img');
+            const scripts = doc.querySelectorAll('script');
+            
+            // Enhanced pattern detection using custom rules
+            const detectedFeatures = detectFeaturesWithRules(code, doc);
+            
+            // Store analysis data
+            analysisData = {
+                totalElements: elements.length,
+                headings: headings.length,
+                links: links.length,
+                images: images.length,
+                scripts: scripts.length,
+                detectedFeatures: detectedFeatures
+            };
+
+            // Update indicators
+            updateIndicators(detectedFeatures);
+
+            // Display analysis
+            displayAnalysis();
+        }
+
+        // Detect features using custom analysis rules
+        function detectFeaturesWithRules(code, doc) {
+            const detectedFeatures = [];
+
+            analysisRules.forEach(rule => {
+                let detected = false;
+                let confidence = 0;
+
+                // Check patterns in code
+                rule.patterns.forEach(pattern => {
+                    const regex = new RegExp(pattern, 'gi');
+                    if (regex.test(code)) {
+                        detected = true;
+                        confidence += 0.3;
+                    }
+                });
+
+                // Check CSS selectors in DOM
+                rule.cssSelectors.forEach(selector => {
+                    try {
+                        if (doc.querySelector(selector)) {
+                            detected = true;
+                            confidence += 0.4;
+                        }
+                    } catch (e) {
+                        // Invalid selector, skip
+                    }
+                });
+
+                if (detected) {
+                    detectedFeatures.push({
+                        rule: rule,
+                        confidence: Math.min(confidence, 1.0),
+                        detected: true
+                    });
+                }
+            });
+
+            return detectedFeatures;
+        }
+
+        // Update visual indicators
+        function updateIndicators(detectedFeatures) {
+            let hasTabSystem = false;
+            let hasVisualEffects = false;
+            let hasInteractive = false;
+
+            detectedFeatures.forEach(feature => {
+                if (feature.rule.id === 'tab-system') hasTabSystem = true;
+                if (feature.rule.id === 'glitch-effect' || feature.rule.id === 'ink-bleed') hasVisualEffects = true;
+                if (feature.rule.id === 'star-map' || feature.rule.name.toLowerCase().includes('interactive')) hasInteractive = true;
+            });
+
+            document.getElementById('tabIndicator').style.display = hasTabSystem ? 'inline-block' : 'none';
+            document.getElementById('effectIndicator').style.display = hasVisualEffects ? 'inline-block' : 'none';
+            document.getElementById('interactiveIndicator').style.display = hasInteractive ? 'inline-block' : 'none';
+        }
+
+        // Display analysis
+        function displayAnalysis() {
+            const analysisPanel = document.getElementById('analysisPanel');
+            const analysisGrid = document.getElementById('analysisGrid');
+            
+            let featuresHTML = '';
+            if (analysisData.detectedFeatures.length > 0) {
+                featuresHTML = analysisData.detectedFeatures.map(feature => `
+                    <div class="analysis-card">
+                        <h3>${feature.rule.name}</h3>
+                        <p><strong>Description:</strong> ${feature.rule.description}</p>
+                        <p><strong>Confidence:</strong> ${Math.round(feature.confidence * 100)}%</p>
+                        <p><strong>Status:</strong> ✅ Detected</p>
+                    </div>
+                `).join('');
+            } else {
+                featuresHTML = `
+                    <div class="analysis-card">
+                        <h3>No Special Features Detected</h3>
+                        <p>No custom patterns or effects were found in this code. You can add custom analysis rules to detect new patterns.</p>
+                    </div>
+                `;
+            }
+            
+            analysisGrid.innerHTML = `
+                <div class="analysis-card">
+                    <h3>📊 Basic Metrics</h3>
+                    <p><strong>Total Elements:</strong> ${analysisData.totalElements}</p>
+                    <p><strong>Headings:</strong> ${analysisData.headings}</p>
+                    <p><strong>Links:</strong> ${analysisData.links}</p>
+                    <p><strong>Images:</strong> ${analysisData.images}</p>
+                    <p><strong>Scripts:</strong> ${analysisData.scripts}</p>
+                </div>
+                ${featuresHTML}
+            `;
+            
+            analysisPanel.style.display = 'block';
+        }
+
+        // Full-screen editor functions
+        function openFullscreenEditor() {
+            const code = document.getElementById('codeInput').value;
+            document.getElementById('fullscreenCodeEditor').value = code;
+            document.getElementById('fullscreenEditor').classList.add('active');
+            
+            // Update preview in real-time
+            updateFullscreenPreview();
+            
+            // Add event listener for real-time preview
+            document.getElementById('fullscreenCodeEditor').addEventListener('input', updateFullscreenPreview);
+            
+            showStatus('Full-screen editor opened. Edit your code and see live preview!', 'info');
+        }
+
+        function closeFullscreenEditor() {
+            document.getElementById('fullscreenEditor').classList.remove('active');
+            document.getElementById('fullscreenCodeEditor').removeEventListener('input', updateFullscreenPreview);
+        }
+
+        function updateFullscreenPreview() {
+            const code = document.getElementById('fullscreenCodeEditor').value;
+            const previewFrame = document.getElementById('fullscreenPreviewFrame');
+            const blob = new Blob([code], { type: 'text/html' });
+            previewFrame.src = URL.createObjectURL(blob);
+        }
+
+        function saveFromFullscreen() {
+            const code = document.getElementById('fullscreenCodeEditor').value;
+            document.getElementById('codeInput').value = code;
+            currentHTML = code;
+            
+            // Update main preview
+            const previewFrame = document.getElementById('previewFrame');
+            const blob = new Blob([code], { type: 'text/html' });
+            previewFrame.src = URL.createObjectURL(blob);
+            
+            // Re-analyze
+            if (code.trim()) {
+                performAnalysis(code);
+            }
+            
+            closeFullscreenEditor();
+            showStatus('Code saved and applied successfully!', 'success');
+        }
+
+        // Save current code as file
+        function saveCurrentCode() {
+            if (!currentHTML) {
+                showStatus('No code to save. Please analyze some code first.', 'warning');
+                return;
+            }
+            
+            const blob = new Blob([currentHTML], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'edited_code.html';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showStatus('HTML file saved successfully!', 'success');
+        }
+
+        // Extract and save snippets with intelligent refactoring
+        function extractAndSaveSnippets() {
+            if (!currentHTML) {
+                showStatus('No code to extract snippets from. Please analyze some code first.', 'warning');
+                return;
+            }
+
+            const extractedSnippets = extractSnippetsWithRules(currentHTML);
+            
+            extractedSnippets.forEach(snippet => {
+                // Check if snippet already exists
+                const exists = snippetLibrary.some(existing => 
+                    existing.name === snippet.name && existing.originalCode === snippet.originalCode
+                );
+                
+                if (!exists) {
+                    snippetLibrary.push({
+                        ...snippet,
+                        id: Date.now() + Math.random(),
+                        timestamp: new Date().toISOString()
+                    });
+                }
+            });
+            
+            saveSnippetsToStorage();
+            displaySnippetLibrary();
+            showStatus(`${extractedSnippets.length} snippets extracted and saved to library!`, 'success');
+        }
+
+        // Extract snippets using analysis rules
+        function extractSnippetsWithRules(code) {
+            const snippets = [];
+
+            analysisData.detectedFeatures.forEach(feature => {
+                const rule = feature.rule;
+                let extractedCSS = '';
+                let extractedHTML = '';
+
+                // Extract CSS patterns
+                rule.extractionRules.css.forEach(pattern => {
+                    const regex = new RegExp(pattern, 'gs');
+                    const matches = code.match(regex);
+                    if (matches) {
+                        extractedCSS += matches.join('\n\n') + '\n\n';
+                    }
+                });
+
+                // Extract HTML patterns
+                rule.extractionRules.html.forEach(pattern => {
+                    const regex = new RegExp(pattern, 'gs');
+                    const matches = code.match(regex);
+                    if (matches) {
+                        extractedHTML += matches.join('\n') + '\n';
+                    }
+                });
+
+                if (extractedCSS || extractedHTML) {
+                    const combinedCode = extractedCSS + extractedHTML;
+                    snippets.push({
+                        name: rule.name,
+                        type: 'html-css',
+                        description: rule.description,
+                        originalCode: combinedCode.trim(),
+                        refactorRules: rule.refactorRules,
+                        ruleId: rule.id,
+                        tags: ['extracted', rule.id, 'custom']
+                    });
+                }
+            });
+
+            return snippets;
+        }
+
+        // Intelligent refactoring function
+        function refactorSnippet(snippet, options = {}) {
+            let refactoredCode = snippet.originalCode;
+            const rule = snippet.refactorRules;
+
+            if (options.adaptClassNames && rule.classNames) {
+                // Replace class names with alternatives
+                const originalClasses = extractClassNames(snippet.originalCode);
+                originalClasses.forEach((originalClass, index) => {
+                    if (rule.classNames[index % rule.classNames.length]) {
+                        const newClass = rule.classNames[index % rule.classNames.length];
+                        const regex = new RegExp(`\\b${originalClass}\\b`, 'g');
+                        refactoredCode = refactoredCode.replace(regex, newClass);
+                    }
+                });
+            }
+
+            if (options.addCSSVariables && rule.variableNames) {
+                // Add CSS variables for common values
+                refactoredCode = addCSSVariables(refactoredCode, rule.variableNames);
+            }
+
+            if (options.modernizeSyntax) {
+                // Convert to modern CSS syntax
+                refactoredCode = modernizeCSS(refactoredCode);
+            }
+
+            return refactoredCode;
+        }
+
+        function extractClassNames(code) {
+            const classRegex = /class\s*=\s*["']([^"']+)["']/g;
+            const cssClassRegex = /\.([a-zA-Z_-][a-zA-Z0-9_-]*)/g;
+            const classes = new Set();
+            
+            let match;
+            while ((match = classRegex.exec(code)) !== null) {
+                match[1].split(/\s+/).forEach(cls => classes.add(cls));
+            }
+            
+            while ((match = cssClassRegex.exec(code)) !== null) {
+                classes.add(match[1]);
+            }
+            
+            return Array.from(classes);
+        }
+
+        function addCSSVariables(code, variableNames) {
+            // Simple implementation - add CSS variables for common patterns
+            let modifiedCode = code;
+            
+            // Add variables for colors
+            const colorRegex = /#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}|rgb\([^)]+\)|rgba\([^)]+\)/g;
+            const colors = [...new Set(code.match(colorRegex) || [])];
+            
+            if (colors.length > 0 && variableNames.length > 0) {
+                let variables = ':root {\n';
+                colors.forEach((color, index) => {
+                    if (variableNames[index]) {
+                        variables += `  ${variableNames[index]}: ${color};\n`;
+                        modifiedCode = modifiedCode.replace(new RegExp(color.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), `var(${variableNames[index]})`);
+                    }
+                });
+                variables += '}\n\n';
+                modifiedCode = variables + modifiedCode;
+            }
+            
+            return modifiedCode;
+        }
+
+        function modernizeCSS(code) {
+            // Convert old CSS to modern equivalents
+            return code
+                .replace(/display:\s*-webkit-box/g, 'display: flex')
+                .replace(/display:\s*-moz-box/g, 'display: flex')
+                .replace(/display:\s*-ms-flexbox/g, 'display: flex');
+        }
+
+        // Snippet library management
+        function saveSnippetsToStorage() {
+            localStorage.setItem('ezCodeSnippets', JSON.stringify(snippetLibrary));
+        }
+
+        function displaySnippetLibrary() {
+            const grid = document.getElementById('snippetGrid');
+            
+            if (snippetLibrary.length === 0) {
+                grid.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #64748b; padding: 2rem;">No snippets saved yet. Extract some snippets from your code!</p>';
+                return;
+            }
+            
+            grid.innerHTML = snippetLibrary.map(snippet => `
+                <div class="snippet-card">
+                    <h4>${snippet.name}</h4>
+                    <p>${snippet.description}</p>
+                    <div class="snippet-code">${snippet.originalCode.substring(0, 200)}${snippet.originalCode.length > 200 ? '...' : ''}</div>
+                    
+                    <div class="refactor-options">
+                        <h5>Refactor Options:</h5>
+                        <div class="refactor-option">
+                            <input type="checkbox" id="adapt-${snippet.id}" checked>
+                            <label for="adapt-${snippet.id}">Adapt class names</label>
+                        </div>
+                        <div class="refactor-option">
+                            <input type="checkbox" id="variables-${snippet.id}">
+                            <label for="variables-${snippet.id}">Add CSS variables</label>
+                        </div>
+                        <div class="refactor-option">
+                            <input type="checkbox" id="modernize-${snippet.id}">
+                            <label for="modernize-${snippet.id}">Modernize syntax</label>
+                        </div>
+                    </div>
+                    
+                    <div class="snippet-actions">
+                        <button class="btn btn-primary" onclick="insertSnippetWithRefactor('${snippet.id}')">
+                            📋 Insert (Smart)
+                        </button>
+                        <button class="btn btn-secondary" onclick="insertSnippet('${snippet.id}')">
+                            📄 Insert (Original)
+                        </button>
+                        <button class="btn btn-secondary" onclick="copySnippet('${snippet.id}')">
+                            📄 Copy
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteSnippet('${snippet.id}')">
+                            🗑️ Delete
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function insertSnippetWithRefactor(snippetId) {
+            const snippet = snippetLibrary.find(s => s.id == snippetId);
+            if (!snippet) return;
+            
+            const options = {
+                adaptClassNames: document.getElementById(`adapt-${snippetId}`).checked,
+                addCSSVariables: document.getElementById(`variables-${snippetId}`).checked,
+                modernizeSyntax: document.getElementById(`modernize-${snippetId}`).checked
+            };
+            
+            const refactoredCode = refactorSnippet(snippet, options);
+            const currentCode = document.getElementById('codeInput').value;
+            const newCode = currentCode + '\n\n<!-- ' + snippet.name + ' (Refactored) -->\n' + refactoredCode;
+            document.getElementById('codeInput').value = newCode;
+            
+            showStatus(`${snippet.name} inserted with intelligent refactoring!`, 'success');
+        }
+
+        function insertSnippet(snippetId) {
+            const snippet = snippetLibrary.find(s => s.id == snippetId);
+            if (!snippet) return;
+            
+            const currentCode = document.getElementById('codeInput').value;
+            const newCode = currentCode + '\n\n<!-- ' + snippet.name + ' (Original) -->\n' + snippet.originalCode;
+            document.getElementById('codeInput').value = newCode;
+            
+            showStatus(`${snippet.name} inserted into code!`, 'success');
+        }
+
+        function copySnippet(snippetId) {
+            const snippet = snippetLibrary.find(s => s.id == snippetId);
+            if (!snippet) return;
+            
+            navigator.clipboard.writeText(snippet.originalCode).then(() => {
+                showStatus(`${snippet.name} copied to clipboard!`, 'success');
+            }).catch(() => {
+                showStatus('Failed to copy to clipboard.', 'warning');
+            });
+        }
+
+        function deleteSnippet(snippetId) {
+            snippetLibrary = snippetLibrary.filter(s => s.id != snippetId);
+            saveSnippetsToStorage();
+            displaySnippetLibrary();
+            showStatus('Snippet deleted.', 'info');
+        }
+
+        function clearSnippetLibrary() {
+            if (confirm('Are you sure you want to clear all snippets? This cannot be undone.')) {
+                snippetLibrary = [];
+                localStorage.removeItem('ezCodeSnippets');
+                displaySnippetLibrary();
+                showStatus('Snippet library cleared.', 'info');
+            }
+        }
+
+        function exportSnippetLibrary() {
+            const data = {
+                snippets: snippetLibrary,
+                analysisRules: analysisRules,
+                exportDate: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ez_code_library_complete.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showStatus('Complete library (snippets + analysis rules) exported successfully!', 'success');
+        }
+
+        function importSnippetLibrary(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.snippets && Array.isArray(data.snippets)) {
+                        snippetLibrary = [...snippetLibrary, ...data.snippets];
+                        saveSnippetsToStorage();
+                        displaySnippetLibrary();
+                    }
+                    
+                    if (data.analysisRules && Array.isArray(data.analysisRules)) {
+                        analysisRules = [...analysisRules, ...data.analysisRules];
+                        saveAnalysisRulesToStorage();
+                        displayAnalysisRules();
+                    }
+                    
+                    showStatus(`Imported ${data.snippets?.length || 0} snippets and ${data.analysisRules?.length || 0} analysis rules!`, 'success');
+                } catch (error) {
+                    showStatus('Error reading library file.', 'warning');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.className = `status-message status-${type}`;
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // Initialize app
+        window.onload = function() {
+            initializeApp();
+            showStatus('Welcome! Load HTML code to start editing and building your intelligent snippet library.', 'info');
+        };
+    </script>
 </body>
 </html>
+
