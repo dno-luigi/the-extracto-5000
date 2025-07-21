@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';">
+    <title>EZ Visual Code Editor</title>
+    <link rel="stylesheet" href="ez_visual_editor_styles.css">
+    
+    <style>
+        /* Critical CSS fallback */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 EZ Visual Code Editor</h1>
+            <p>No-code visual editing with direct manipulation</p>
+        </header>
+
+        <div class="main-layout">
+            <!-- Code Input Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    📝 HTML Code Input
+                </div>
+                <div class="panel-content">
+                    <div class="controls">
+                        <button class="btn btn-primary" onclick="analyzeCode()">
+                            🔍 Analyze & Preview
+                        </button>
+                        <button class="btn btn-warning" onclick="openVisualEditor()">
+                            🎨 Visual Edit
+                        </button>
+                        <button class="btn btn-secondary" onclick="clearCode()">
+                            🗑️ Clear
+                        </button>
+                        <input type="file" id="fileInput" accept=".html" style="display: none;" onchange="loadFile(event)">
+                        <button class="btn btn-secondary" onclick="document.getElementById('fileInput').click()">
+                            📁 Load File
+                        </button>
+                        <button class="btn btn-success" onclick="saveCurrentCode()" id="saveCodeBtn" style="display: none;">
+                            💾 Save HTML
+                        </button>
+                    </div>
+                    <textarea 
+                        id="codeInput" 
+                        class="code-input" 
+                        placeholder="Paste your HTML code here or load a file..."
+                    ></textarea>
+                </div>
+            </div>
+
+            <!-- Preview Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    👁️ Live Preview
+                    <div>
+                        <span id="tabIndicator" class="tab-indicator" style="display: none;">TAB SYSTEM</span>
+                        <span id="effectIndicator" class="effect-indicator" style="display: none;">VISUAL EFFECTS</span>
+                        <span id="interactiveIndicator" class="interactive-indicator" style="display: none;">INTERACTIVE</span>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <iframe id="previewFrame" class="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Visual Editor -->
+    <div class="visual-editor" id="visualEditor">
+        <div class="visual-editor-header">
+            <h2>🎨 Visual Editor - Click elements to edit</h2>
+            <div>
+                <button class="btn btn-success" onclick="saveFromVisualEditor()">
+                    💾 Save Changes
+                </button>
+                <button class="btn btn-secondary" onclick="closeVisualEditor()">
+                    ❌ Exit Visual Mode
+                </button>
+            </div>
+        </div>
+        <div class="visual-editor-content">
+            <iframe id="visualEditorFrame" class="visual-editor-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+    </div>
+
+    <!-- Property Panel -->
+    <div class="property-panel" id="propertyPanel">
+        <div class="property-panel-header">
+            <span id="selectedElementType">Element Properties</span>
+        </div>
+        <div class="property-panel-content" id="propertyPanelContent">
+            <!-- Properties will be populated here -->
+        </div>
+    </div>
+
+    <script src="ez_visual_editor_app.js"></script>
+        <script>
+        // CSS loading verification
+        window.addEventListener('load', function() {
+            const isCssLoaded = Array.from(document.styleSheets).some(sheet => {
+                return sheet.href && sheet.href.includes('ez_visual_editor_styles.css');
+            });
+            
+            if (!isCssLoaded) {
+                console.warn('Main stylesheet failed to load, using fallback styles');
+                document.body.classList.add('css-fallback');
+            }
+        });
+    </script>
+</body>
+</html>
+
